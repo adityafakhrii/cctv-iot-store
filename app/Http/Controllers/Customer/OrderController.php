@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Order;
 use App\Models\Payment;
 use App\Services\MayarService;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
@@ -89,4 +90,28 @@ class OrderController extends Controller
             'order' => $order,
         ]);
     }
+
+    public function confirmReceived(Request $request, string $orderNumber): RedirectResponse
+    {
+        $user = $request->user();
+
+        $order = Order::where('order_number', $orderNumber)->firstOrFail();
+
+        // Ensure user can only confirm their own orders
+        if ($order->user_id !== $user->id && strtolower($order->customer_email) !== strtolower($user->email) && ! $user->is_admin) {
+            abort(403, 'Anda tidak memiliki akses untuk mengonfirmasi pesanan ini.');
+        }
+
+        // Only orders that are shipped can be confirmed as received
+        if ($order->order_status !== Order::STATUS_SHIPPED) {
+            return back()->with('error', 'Hanya pesanan dengan status "Dikirim" yang dapat dikonfirmasi telah diterima.');
+        }
+
+        $order->update([
+            'order_status' => Order::STATUS_COMPLETED,
+        ]);
+
+        return back()->with('success', "Pesanan #{$order->order_number} berhasil dikonfirmasi diterima. Terima kasih telah berbelanja di Dodolan Store!");
+    }
 }
+

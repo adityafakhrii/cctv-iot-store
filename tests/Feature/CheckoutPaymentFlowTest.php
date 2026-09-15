@@ -248,6 +248,8 @@ class CheckoutPaymentFlowTest extends TestCase
 
     public function test_mayar_service_throws_exception_when_api_response_is_not_successful(): void
     {
+        config(['services.mayar.api_key' => 'live_sample_token_for_faking']);
+
         Http::fake([
             '*/invoices/create' => Http::response(['message' => 'Invalid API Key'], 401),
         ]);
@@ -274,6 +276,8 @@ class CheckoutPaymentFlowTest extends TestCase
 
     public function test_mayar_service_returns_payment_details_when_api_succeeds(): void
     {
+        config(['services.mayar.api_key' => 'live_sample_token_for_faking']);
+
         Http::fake([
             '*/invoices/create' => Http::response([
                 'data' => [
@@ -302,4 +306,85 @@ class CheckoutPaymentFlowTest extends TestCase
         $this->assertEquals('inv_mayar_999', $result['payment_reference']);
         $this->assertEquals('https://mayar.id/inv/test-999', $result['payment_url']);
     }
+
+    public function test_customer_can_confirm_order_received_when_status_is_shipped(): void
+    {
+        $user = User::factory()->create(['is_admin' => false]);
+
+        $order = Order::create([
+            'user_id' => $user->id,
+            'order_number' => 'DDL-TEST-RCV-01',
+            'customer_name' => $user->name,
+            'customer_email' => $user->email,
+            'customer_phone' => '081234567890',
+            'customer_address' => 'Surabaya',
+            'shipping_courier' => 'JNE Express',
+            'tracking_number' => 'JNE123456789',
+            'subtotal' => 150000,
+            'total' => 150000,
+            'payment_status' => Order::PAYMENT_PAID,
+            'order_status' => Order::STATUS_SHIPPED,
+        ]);
+
+        $response = $this->actingAs($user)->patch("/pesanan/{$order->order_number}/terima");
+
+        $response->assertSessionHas('success');
+
+        $order->refresh();
+        $this->assertEquals(Order::STATUS_COMPLETED, $order->order_status);
+    }
+
+    public function test_customer_cannot_confirm_order_of_another_user(): void
+    {
+        $userA = User::factory()->create(['is_admin' => false]);
+        $userB = User::factory()->create(['is_admin' => false]);
+
+        $order = Order::create([
+            'user_id' => $userA->id,
+            'order_number' => 'DDL-TEST-RCV-02',
+            'customer_name' => $userA->name,
+            'customer_email' => $userA->email,
+            'customer_phone' => '081234567890',
+            'customer_address' => 'Surabaya',
+            'shipping_courier' => 'SiCepat',
+            'tracking_number' => 'SCP987654321',
+            'subtotal' => 200000,
+            'total' => 200000,
+            'payment_status' => Order::PAYMENT_PAID,
+            'order_status' => Order::STATUS_SHIPPED,
+        ]);
+
+        $response = $this->actingAs($userB)->patch("/pesanan/{$order->order_number}/terima");
+
+        $response->assertStatus(403);
+
+        $order->refresh();
+        $this->assertEquals(Order::STATUS_SHIPPED, $order->order_status);
+    }
+
+    public function test_customer_cannot_confirm_order_if_not_shipped(): void
+    {
+        $user = User::factory()->create(['is_admin' => false]);
+
+        $order = Order::create([
+            'user_id' => $user->id,
+            'order_number' => 'DDL-TEST-RCV-03',
+            'customer_name' => $user->name,
+            'customer_email' => $user->email,
+            'customer_phone' => '081234567890',
+            'customer_address' => 'Surabaya',
+            'subtotal' => 200000,
+            'total' => 200000,
+            'payment_status' => Order::PAYMENT_PENDING,
+            'order_status' => Order::STATUS_PENDING_PAYMENT,
+        ]);
+
+        $response = $this->actingAs($user)->patch("/pesanan/{$order->order_number}/terima");
+
+        $response->assertSessionHas('error');
+
+        $order->refresh();
+        $this->assertEquals(Order::STATUS_PENDING_PAYMENT, $order->order_status);
+    }
 }
+

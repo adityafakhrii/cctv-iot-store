@@ -4,7 +4,7 @@ import { AdminLayout } from '@/layouts/admin-layout';
 import { Checkbox } from '@/components/ui/checkbox';
 import { CustomSelect } from '@/components/ui/custom-select';
 import { ImageUploader } from '@/components/ui/image-uploader';
-import { Plus, Edit2, Trash2, Image as ImageIcon, X, Loader2, ExternalLink } from 'lucide-react';
+import { Plus, Edit2, Trash2, Image as ImageIcon, X, Loader2, ExternalLink, Info } from 'lucide-react';
 import { toast } from 'sonner';
 
 const CTA_URL_PRESETS = [
@@ -140,6 +140,24 @@ export default function BannersIndex({ banners }: BannersIndexProps) {
                     </button>
                 </div>
 
+                {/* Banner Specifications Guidance Info Card */}
+                <div className="rounded-2xl border border-blue-200 bg-blue-50/60 p-4 dark:border-blue-900/60 dark:bg-blue-950/30 flex flex-col sm:flex-row items-start gap-3.5">
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-blue-600 text-white shadow-sm mt-0.5">
+                        <ImageIcon className="h-5 w-5" />
+                    </div>
+                    <div className="space-y-1 text-xs text-slate-600 dark:text-slate-300">
+                        <p className="font-bold text-slate-900 dark:text-white flex flex-wrap items-center gap-2">
+                            <span>Panduan Format &amp; Ukuran Banner Promosi</span>
+                            <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 rounded-md bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                                Rasio Disarankan 16:9
+                            </span>
+                        </p>
+                        <p className="text-[11px] leading-relaxed">
+                            Gunakan rasio <strong>16:9</strong> (resolusi ideal <strong>1200 &times; 675 px</strong>) atau rasio <strong>2:1</strong> (<strong>1200 &times; 600 px</strong>) dengan format <strong>JPG, PNG, atau WEBP</strong> (maks. 5MB). Komposisi gambar utama disarankan berada di sisi kanan agar teks promosi di sisi kiri homepage terbaca kontras dan nyaman dilihat.
+                        </p>
+                    </div>
+                </div>
+
                 {/* Banners Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                     {banners.map((banner) => (
@@ -225,6 +243,28 @@ export default function BannersIndex({ banners }: BannersIndexProps) {
                             </div>
 
                             <form onSubmit={handleFormSubmit} className="space-y-4">
+                                {/* Banner Aspect Ratio & Size Guidance Box */}
+                                <div className="rounded-xl border border-blue-200 bg-blue-50/70 p-3.5 dark:border-blue-900/60 dark:bg-blue-950/40 space-y-2.5 text-xs">
+                                    <div className="flex items-center gap-2 text-blue-900 dark:text-blue-200 font-bold text-xs">
+                                        <Info className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0" />
+                                        <span>Spesifikasi Ukuran &amp; Aspek Rasio Banner</span>
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-2 pt-0.5">
+                                        <div className="bg-white/90 dark:bg-slate-900/90 rounded-lg p-2 border border-blue-100 dark:border-blue-900/50">
+                                            <span className="text-[10px] text-slate-400 font-semibold block uppercase">Skala / Aspek Rasio</span>
+                                            <span className="font-bold text-slate-900 dark:text-white">16:9 atau 2:1</span>
+                                        </div>
+                                        <div className="bg-white/90 dark:bg-slate-900/90 rounded-lg p-2 border border-blue-100 dark:border-blue-900/50">
+                                            <span className="text-[10px] text-slate-400 font-semibold block uppercase">Resolusi Rekomendasi</span>
+                                            <span className="font-bold text-slate-900 dark:text-white">1200 &times; 675 px</span>
+                                        </div>
+                                    </div>
+                                    <ul className="text-[11px] text-slate-500 dark:text-slate-400 space-y-1 list-disc list-inside leading-relaxed">
+                                        <li><strong>Format &amp; Ukuran File:</strong> JPG, PNG, WEBP (Maksimal 5MB, otomatis dikonversi ke WebP).</li>
+                                        <li><strong>Tips Layout:</strong> Teks judul promo tampil di sisi kiri banner pada beranda. Letakkan objek/hardware utama di area tengah hingga kanan agar teks tidak tumpang-tindih di desktop maupun mobile.</li>
+                                    </ul>
+                                </div>
+
                                 <ImageUploader
                                     id="banner-image-upload"
                                     label="Gambar Banner"
@@ -232,6 +272,7 @@ export default function BannersIndex({ banners }: BannersIndexProps) {
                                     currentImageUrl={editingBanner?.image_url || null}
                                     onChange={(file) => setData('image', file)}
                                     error={errors.image}
+                                    helperText="Format: JPG, PNG, WEBP (Maks. 5MB) • Disarankan 16:9 (1200 × 675 px)"
                                 />
 
                                 <div>

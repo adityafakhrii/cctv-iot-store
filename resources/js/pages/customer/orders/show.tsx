@@ -1,4 +1,4 @@
-import { Link } from '@inertiajs/react';
+import { Link, router } from '@inertiajs/react';
 import { CustomerLayout } from '@/layouts/customer-layout';
 import { formatRupiah, formatDate } from '@/lib/format';
 import { 
@@ -13,7 +13,8 @@ import {
     Package, 
     ExternalLink, 
     MapPin,
-    AlertCircle
+    AlertCircle,
+    Loader2
 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
@@ -62,6 +63,8 @@ interface Props {
 
 export default function CustomerOrderShow({ order }: Props) {
     const [copied, setCopied] = useState(false);
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleCopyTracking = () => {
         if (!order.tracking_number) return;
@@ -73,6 +76,23 @@ export default function CustomerOrderShow({ order }: Props) {
 
     const handlePrintInvoice = () => {
         window.print();
+    };
+
+    const handleConfirmReceived = () => {
+        setIsSubmitting(true);
+        router.patch(`/pesanan/${order.order_number}/terima`, {}, {
+            preserveScroll: true,
+            onSuccess: () => {
+                setShowConfirmModal(false);
+                setIsSubmitting(false);
+                toast.success(`Pesanan #${order.order_number} berhasil dikonfirmasi diterima!`);
+            },
+            onError: (errors) => {
+                setIsSubmitting(false);
+                const message = Object.values(errors)[0] || 'Gagal mengonfirmasi penerimaan pesanan. Silakan coba lagi.';
+                toast.error(String(message));
+            },
+        });
     };
 
     const steps = [
@@ -109,6 +129,16 @@ export default function CustomerOrderShow({ order }: Props) {
                         <ChevronLeft className="h-4 w-4" />
                         <span>Kembali</span>
                     </Link>
+                    {order.order_status === 'Dikirim' && (
+                        <button
+                            type="button"
+                            onClick={() => setShowConfirmModal(true)}
+                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition shadow-xs cursor-pointer"
+                        >
+                            <CheckCircle2 className="h-4 w-4" />
+                            <span>Pesanan Diterima</span>
+                        </button>
+                    )}
                     <button
                         type="button"
                         onClick={handlePrintInvoice}
@@ -191,6 +221,37 @@ export default function CustomerOrderShow({ order }: Props) {
                     >
                         {copied ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
                         <span>{copied ? 'Tersalin' : 'Salin Nomor Resi'}</span>
+                    </button>
+                </div>
+            )}
+
+            {/* Confirm Received Action Card when Order is Shipped */}
+            {order.order_status === 'Dikirim' && (
+                <div className="rounded-2xl border border-emerald-300 bg-gradient-to-r from-emerald-50 via-teal-50/50 to-emerald-50 p-4 sm:p-6 dark:border-emerald-800 dark:bg-gradient-to-r dark:from-emerald-950/40 dark:via-teal-950/30 dark:to-emerald-950/40 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex items-start gap-3.5">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-600 text-white shadow-sm">
+                            <CheckCircle2 className="h-5 w-5" />
+                        </div>
+                        <div>
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-300">
+                                Konfirmasi Penerimaan Paket
+                            </span>
+                            <p className="text-sm font-extrabold text-slate-900 dark:text-white">
+                                Apakah paket pesanan telah sampai di tujuan?
+                            </p>
+                            <p className="text-xs text-slate-600 dark:text-slate-300 mt-0.5 max-w-xl leading-relaxed">
+                                Jika Anda telah menerima perangkat IoT ini dalam kondisi lengkap dan berfungsi dengan baik, silakan konfirmasi pesanan telah diterima untuk menyelesaikan transaksi.
+                            </p>
+                        </div>
+                    </div>
+
+                    <button
+                        type="button"
+                        onClick={() => setShowConfirmModal(true)}
+                        className="w-full sm:w-auto inline-flex min-h-[44px] items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-bold text-white transition shadow-sm cursor-pointer shrink-0"
+                    >
+                        <CheckCircle2 className="h-4 w-4" />
+                        <span>Pesanan Diterima</span>
                     </button>
                 </div>
             )}
@@ -298,6 +359,51 @@ export default function CustomerOrderShow({ order }: Props) {
                     </div>
                 </div>
             </div>
+
+            {/* Confirmation Modal Dialog */}
+            {showConfirmModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in">
+                    <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900 shadow-2xl space-y-4 animate-in zoom-in-95">
+                        <div className="flex items-start gap-3.5">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400">
+                                <CheckCircle2 className="h-5 w-5" />
+                            </div>
+                            <div className="space-y-1">
+                                <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                                    Konfirmasi Pesanan Diterima?
+                                </h3>
+                                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                                    Pastikan seluruh perangkat IoT dan kelengkapan pada pesanan <strong>#{order.order_number}</strong> telah Anda terima dalam kondisi baik dan berfungsi normal.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="rounded-xl bg-slate-50 dark:bg-slate-800/60 p-3 text-[11px] text-slate-500 dark:text-slate-400">
+                            Status pesanan akan diubah menjadi <strong className="text-emerald-600 dark:text-emerald-400 font-bold">Selesai</strong>. Tindakan ini tidak dapat dibatalkan.
+                        </div>
+
+                        <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                            <button
+                                type="button"
+                                disabled={isSubmitting}
+                                onClick={() => setShowConfirmModal(false)}
+                                className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 transition cursor-pointer"
+                            >
+                                Periksa Kembali
+                            </button>
+                            <button
+                                type="button"
+                                disabled={isSubmitting}
+                                onClick={handleConfirmReceived}
+                                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-bold text-white transition shadow-xs disabled:opacity-50 cursor-pointer"
+                            >
+                                {isSubmitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                                <span>Ya, Pesanan Diterima</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </CustomerLayout>
     );
 }

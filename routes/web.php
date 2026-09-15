@@ -62,6 +62,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/checkout', [CheckoutController::class, 'index'])->name('checkout.index');
     Route::post('/checkout', [CheckoutController::class, 'store'])->middleware('throttle:10,1')->name('checkout.store');
     Route::get('/pesanan/{orderNumber}', [CustomerOrderController::class, 'show'])->name('orders.show');
+    Route::patch('/pesanan/{orderNumber}/terima', [CustomerOrderController::class, 'confirmReceived'])->name('orders.confirm-received');
 });
 
 // Payment Gateway & Status
@@ -82,6 +83,7 @@ Route::middleware(['auth'])->prefix('akun')->name('customer.')->group(function (
     Route::get('/dashboard', [CustomerDashboardController::class, 'index'])->name('dashboard');
     Route::get('/pesanan', [CustomerOrderController::class, 'index'])->name('orders.index');
     Route::get('/pesanan/{orderNumber}', [CustomerOrderController::class, 'show'])->name('orders.show');
+    Route::patch('/pesanan/{orderNumber}/terima', [CustomerOrderController::class, 'confirmReceived'])->name('orders.confirm-received');
     Route::get('/layanan', [CustomerServiceRequestController::class, 'index'])->name('services.index');
     Route::get('/profil', [CustomerProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profil', [CustomerProfileController::class, 'update'])->name('profile.update');

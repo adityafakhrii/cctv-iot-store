@@ -10,9 +10,11 @@ import {
     Truck, 
     CheckCircle2, 
     ExternalLink,
-    Filter
+    Filter,
+    Loader2
 } from 'lucide-react';
 import { useState } from 'react';
+import { toast } from 'sonner';
 
 interface OrderItem {
     id: number;
@@ -54,6 +56,27 @@ interface Props {
 
 export default function CustomerOrdersIndex({ orders, filters }: Props) {
     const [searchQuery, setSearchQuery] = useState(filters.q || '');
+    const [confirmOrder, setConfirmOrder] = useState<Order | null>(null);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const handleConfirmReceived = () => {
+        if (!confirmOrder) return;
+        setIsSubmitting(true);
+        router.patch(`/pesanan/${confirmOrder.order_number}/terima`, {}, {
+            preserveScroll: true,
+            onSuccess: () => {
+                const num = confirmOrder.order_number;
+                setConfirmOrder(null);
+                setIsSubmitting(false);
+                toast.success(`Pesanan #${num} berhasil dikonfirmasi diterima!`);
+            },
+            onError: (errors) => {
+                setIsSubmitting(false);
+                const message = Object.values(errors)[0] || 'Gagal mengonfirmasi pesanan. Silakan coba lagi.';
+                toast.error(String(message));
+            },
+        });
+    };
 
     const statusTabs = [
         { label: 'Semua Status', value: '' },
@@ -236,10 +259,21 @@ export default function CustomerOrdersIndex({ orders, filters }: Props) {
                                         </Link>
                                     )}
 
+                                    {order.order_status === 'Dikirim' && (
+                                        <button
+                                            type="button"
+                                            onClick={() => setConfirmOrder(order)}
+                                            className="min-h-[42px] flex items-center justify-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs shadow-xs transition cursor-pointer"
+                                        >
+                                            <CheckCircle2 className="h-3.5 w-3.5" />
+                                            <span>Pesanan Diterima</span>
+                                        </button>
+                                    )}
+
                                     <Link
                                         href={`/akun/pesanan/${order.order_number}`}
                                         className={`min-h-[42px] flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800 transition ${
-                                            order.order_status === 'Menunggu Pembayaran' ? '' : 'col-span-2 sm:col-span-1'
+                                            order.order_status === 'Menunggu Pembayaran' || order.order_status === 'Dikirim' ? '' : 'col-span-2 sm:col-span-1'
                                         }`}
                                     >
                                         <span>Rincian &amp; Lacak</span>
@@ -287,6 +321,51 @@ export default function CustomerOrdersIndex({ orders, filters }: Props) {
                         >
                             Belanja Sekarang
                         </Link>
+                    </div>
+                </div>
+            )}
+
+            {/* Confirmation Modal Dialog */}
+            {confirmOrder && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in">
+                    <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 dark:border-slate-800 dark:bg-slate-900 shadow-2xl space-y-4 animate-in zoom-in-95">
+                        <div className="flex items-start gap-3.5">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-100 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400">
+                                <CheckCircle2 className="h-5 w-5" />
+                            </div>
+                            <div className="space-y-1">
+                                <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                                    Konfirmasi Pesanan Diterima?
+                                </h3>
+                                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                                    Pastikan seluruh perangkat IoT dan kelengkapan pada pesanan <strong>#{confirmOrder.order_number}</strong> telah sampai dalam kondisi baik.
+                                </p>
+                            </div>
+                        </div>
+
+                        <div className="rounded-xl bg-slate-50 dark:bg-slate-800/60 p-3 text-[11px] text-slate-500 dark:text-slate-400">
+                            Status pesanan akan diubah menjadi <strong className="text-emerald-600 dark:text-emerald-400 font-bold">Selesai</strong>. Tindakan ini tidak dapat dibatalkan.
+                        </div>
+
+                        <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+                            <button
+                                type="button"
+                                disabled={isSubmitting}
+                                onClick={() => setConfirmOrder(null)}
+                                className="px-4 py-2 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 transition cursor-pointer"
+                            >
+                                Periksa Kembali
+                            </button>
+                            <button
+                                type="button"
+                                disabled={isSubmitting}
+                                onClick={handleConfirmReceived}
+                                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-bold text-white transition shadow-xs disabled:opacity-50 cursor-pointer"
+                            >
+                                {isSubmitting && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                                <span>Ya, Pesanan Diterima</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             )}
