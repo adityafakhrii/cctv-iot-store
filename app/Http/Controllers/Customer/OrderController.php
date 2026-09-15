@@ -113,5 +113,35 @@ class OrderController extends Controller
 
         return back()->with('success', "Pesanan #{$order->order_number} berhasil dikonfirmasi diterima. Terima kasih telah berbelanja di Dodolan Store!");
     }
+
+    public function downloadInvoice(Request $request, string $orderNumber): \Symfony\Component\HttpFoundation\Response
+    {
+        $user = $request->user();
+
+        $order = Order::with(['items.product', 'payments', 'latestPayment'])
+            ->where('order_number', $orderNumber)
+            ->firstOrFail();
+
+        // Ensure user can only view their own invoice
+        if ($order->user_id !== $user->id && strtolower($order->customer_email) !== strtolower($user->email) && ! $user->is_admin) {
+            abort(403, 'Anda tidak memiliki akses untuk mengunduh invoice pesanan ini.');
+        }
+
+        $logoPath = public_path('assets/logo/logo-dark.png');
+        $logoBase64 = file_exists($logoPath) ? 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath)) : null;
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('invoices.order-invoice', [
+            'order' => $order,
+            'logoBase64' => $logoBase64,
+        ])->setPaper('a4', 'portrait');
+
+        $filename = "Invoice-{$order->order_number}.pdf";
+
+        if ($request->boolean('preview') || $request->boolean('stream')) {
+            return $pdf->stream($filename);
+        }
+
+        return $pdf->download($filename);
+    }
 }
 

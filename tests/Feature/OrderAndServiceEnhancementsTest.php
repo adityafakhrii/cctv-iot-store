@@ -183,4 +183,73 @@ class OrderAndServiceEnhancementsTest extends TestCase
         $order->refresh();
         $this->assertEquals(Order::STATUS_SHIPPED, $order->order_status);
     }
+
+    public function test_customer_can_download_invoice_pdf(): void
+    {
+        $customer = User::factory()->create(['is_admin' => false]);
+
+        $order = Order::create([
+            'user_id' => $customer->id,
+            'order_number' => 'DDL-202609-INV01',
+            'customer_name' => $customer->name,
+            'customer_email' => $customer->email,
+            'customer_phone' => '081234567890',
+            'customer_address' => 'Surabaya',
+            'subtotal' => 2000000,
+            'total' => 2000000,
+            'payment_status' => Order::PAYMENT_PAID,
+            'order_status' => Order::STATUS_SHIPPED,
+        ]);
+
+        $response = $this->actingAs($customer)->get("/akun/pesanan/{$order->order_number}/invoice");
+        $response->assertOk();
+        $response->assertHeader('Content-Type', 'application/pdf');
+        $this->assertStringContainsString('Invoice-DDL-202609-INV01.pdf', $response->headers->get('Content-Disposition') ?? '');
+    }
+
+    public function test_customer_cannot_download_other_customer_invoice_pdf(): void
+    {
+        $owner = User::factory()->create(['email' => 'owner2@example.com', 'is_admin' => false]);
+        $stranger = User::factory()->create(['email' => 'stranger2@example.com', 'is_admin' => false]);
+
+        $order = Order::create([
+            'user_id' => $owner->id,
+            'order_number' => 'DDL-202609-INV02',
+            'customer_name' => $owner->name,
+            'customer_email' => $owner->email,
+            'customer_phone' => '081234567890',
+            'customer_address' => 'Surabaya',
+            'subtotal' => 1500000,
+            'total' => 1500000,
+            'payment_status' => Order::PAYMENT_PAID,
+            'order_status' => Order::STATUS_PROCESSING,
+        ]);
+
+        $response = $this->actingAs($stranger)->get("/akun/pesanan/{$order->order_number}/invoice");
+        $response->assertStatus(403);
+    }
+
+    public function test_admin_can_download_any_order_invoice_pdf(): void
+    {
+        $admin = User::factory()->create(['is_admin' => true]);
+        $customer = User::factory()->create(['is_admin' => false]);
+
+        $order = Order::create([
+            'user_id' => $customer->id,
+            'order_number' => 'DDL-202609-INV03',
+            'customer_name' => $customer->name,
+            'customer_email' => $customer->email,
+            'customer_phone' => '081234567890',
+            'customer_address' => 'Surabaya',
+            'subtotal' => 3000000,
+            'total' => 3000000,
+            'payment_status' => Order::PAYMENT_PAID,
+            'order_status' => Order::STATUS_SHIPPED,
+        ]);
+
+        $response = $this->actingAs($admin)->get("/admin/orders/{$order->id}/invoice");
+        $response->assertOk();
+        $response->assertHeader('Content-Type', 'application/pdf');
+        $this->assertStringContainsString('Invoice-DDL-202609-INV03.pdf', $response->headers->get('Content-Disposition') ?? '');
+    }
 }

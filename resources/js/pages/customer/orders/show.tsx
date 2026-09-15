@@ -89,10 +89,6 @@ export default function CustomerOrderShow({ order }: Props) {
         setTimeout(() => setCopied(false), 2000);
     };
 
-    const handlePrintInvoice = () => {
-        window.print();
-    };
-
     const handleConfirmReceived = () => {
         setIsSubmitting(true);
         router.patch(`/pesanan/${order.order_number}/terima`, {}, {
@@ -154,14 +150,15 @@ export default function CustomerOrderShow({ order }: Props) {
                             <span>Pesanan Diterima</span>
                         </button>
                     )}
-                    <button
-                        type="button"
-                        onClick={handlePrintInvoice}
-                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition shadow-xs"
+                    <a
+                        href={`/akun/pesanan/${order.order_number}/invoice`}
+                        download={`Invoice-${order.order_number}.pdf`}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold transition shadow-xs cursor-pointer"
+                        title="Unduh Faktur Penjualan / Invoice Resmi (PDF)"
                     >
-                        <Printer className="h-4 w-4" />
-                        <span>Cetak Invoice</span>
-                    </button>
+                        <Printer className="h-4 w-4 text-emerald-400" />
+                        <span>Cetak Invoice (PDF)</span>
+                    </a>
                 </div>
             }
         >

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { AdminLayout } from '@/layouts/admin-layout';
 import { CustomSelect } from '@/components/ui/custom-select';
 import { formatRupiah, formatDate, getWhatsAppLink } from '@/lib/format';
-import { ChevronLeft, Phone, Mail, MapPin, CreditCard, ShoppingCart, CheckCircle2, Truck, RefreshCw, MessageSquare, ExternalLink, Clock } from 'lucide-react';
+import { ChevronLeft, Phone, Mail, MapPin, CreditCard, ShoppingCart, CheckCircle2, Truck, RefreshCw, MessageSquare, ExternalLink, Clock, Printer } from 'lucide-react';
 import { toast } from 'sonner';
 import { COURIER_PRESETS, getCourierTracker } from '@/lib/courier';
 
@@ -98,7 +98,7 @@ export default function OrderShow({ order }: OrderShowProps) {
             <Head title={`Admin - Pesanan #${order.order_number} — Dodolan Store`} />
 
             <div className="max-w-5xl mx-auto space-y-6">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center justify-between gap-2">
                     <Link
                         href="/admin/orders"
                         className="inline-flex items-center gap-1 text-xs font-semibold text-slate-500 hover:text-emerald-600 transition"
@@ -106,6 +106,15 @@ export default function OrderShow({ order }: OrderShowProps) {
                         <ChevronLeft className="h-4 w-4" />
                         <span>Kembali ke Daftar Pesanan</span>
                     </Link>
+                    <a
+                        href={`/admin/orders/${order.id}/invoice`}
+                        download={`Invoice-${order.order_number}.pdf`}
+                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 dark:bg-slate-800 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-700 text-xs font-bold transition shadow-xs cursor-pointer"
+                        title="Unduh Faktur Penjualan / Invoice Resmi (PDF)"
+                    >
+                        <Printer className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                        <span>Unduh Invoice (PDF)</span>
+                    </a>
                 </div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 items-start">

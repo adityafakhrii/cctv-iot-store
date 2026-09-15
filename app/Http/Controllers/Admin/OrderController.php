@@ -73,4 +73,25 @@ class OrderController extends Controller
 
         return back()->with('success', "Pesanan #{$order->order_number} berhasil diperbarui.");
     }
+
+    public function downloadInvoice(Request $request, Order $order): \Symfony\Component\HttpFoundation\Response
+    {
+        $order->load(['items.product', 'payments', 'latestPayment']);
+
+        $logoPath = public_path('assets/logo/logo-dark.png');
+        $logoBase64 = file_exists($logoPath) ? 'data:image/png;base64,' . base64_encode(file_get_contents($logoPath)) : null;
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('invoices.order-invoice', [
+            'order' => $order,
+            'logoBase64' => $logoBase64,
+        ])->setPaper('a4', 'portrait');
+
+        $filename = "Invoice-{$order->order_number}.pdf";
+
+        if ($request->boolean('preview') || $request->boolean('stream')) {
+            return $pdf->stream($filename);
+        }
+
+        return $pdf->download($filename);
+    }
 }
