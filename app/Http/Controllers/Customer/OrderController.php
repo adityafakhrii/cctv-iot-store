@@ -57,7 +57,7 @@ class OrderController extends Controller
         $user = $request->user();
 
         $order = Order::where('order_number', $orderNumber)
-            ->with(['items', 'payments', 'latestPayment'])
+            ->with(['items', 'payments', 'latestPayment', 'statusLogs'])
             ->firstOrFail();
 
         // Ensure user can only view their own orders
@@ -82,7 +82,7 @@ class OrderController extends Controller
                 });
 
                 $order->refresh();
-                $order->load(['items', 'payments', 'latestPayment']);
+                $order->load(['items', 'payments', 'latestPayment', 'statusLogs']);
             }
         }
 

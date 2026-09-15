@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { getCourierTracker } from '@/lib/courier';
 
 interface OrderItem {
     id: number;
@@ -216,13 +217,24 @@ export default function CustomerOrdersIndex({ orders, filters }: Props) {
 
                             {/* Tracking info banner if shipped */}
                             {order.tracking_number && (
-                                <div className="flex items-center justify-between p-3 rounded-xl bg-purple-50 border border-purple-200 text-purple-900 dark:bg-purple-950/50 dark:border-purple-800 dark:text-purple-200 text-xs">
+                                <div className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-xl bg-purple-50 border border-purple-200 text-purple-900 dark:bg-purple-950/50 dark:border-purple-800 dark:text-purple-200 text-xs gap-2">
                                     <div className="flex items-center gap-2">
                                         <Truck className="h-4 w-4 text-purple-600 shrink-0" />
                                         <span className="leading-relaxed">
                                             Kurir: <strong className="font-bold">{order.shipping_courier || 'Ekspedisi'}</strong> — No. Resi: <strong className="font-mono font-bold tracking-wider">{order.tracking_number}</strong>
                                         </span>
                                     </div>
+                                    {getCourierTracker(order.shipping_courier, order.tracking_number) && (
+                                        <a
+                                            href={getCourierTracker(order.shipping_courier, order.tracking_number)!.url}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="self-start sm:self-auto inline-flex items-center gap-1 text-[11px] font-bold text-purple-700 hover:text-purple-900 dark:text-purple-300 dark:hover:text-white underline shrink-0"
+                                        >
+                                            <span>Lacak di Website {order.shipping_courier || 'Kurir'}</span>
+                                            <ExternalLink className="h-3 w-3" />
+                                        </a>
+                                    )}
                                 </div>
                             )}
 

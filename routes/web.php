@@ -115,6 +115,7 @@ Route::middleware(['auth', EnsureUserIsAdmin::class])->prefix('admin')->name('ad
 
     // Service Requests Management
     Route::get('/service-requests', [AdminServiceRequestController::class, 'index'])->name('service-requests.index');
+    Route::post('/service-requests', [AdminServiceRequestController::class, 'store'])->name('service-requests.store');
     Route::patch('/service-requests/{serviceRequest}/status', [AdminServiceRequestController::class, 'updateStatus'])->name('service-requests.update-status');
     Route::delete('/service-requests/{serviceRequest}', [AdminServiceRequestController::class, 'destroy'])->name('service-requests.destroy');
 

@@ -8,7 +8,6 @@ import {
     Truck, 
     Copy, 
     Check, 
-    Clock, 
     CheckCircle2, 
     Package, 
     ExternalLink, 
@@ -18,6 +17,14 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { getCourierTracker } from '@/lib/courier';
+
+interface OrderStatusLog {
+    id?: number;
+    status: string;
+    description?: string | null;
+    created_at: string;
+}
 
 interface OrderItem {
     id: number;
@@ -55,6 +62,8 @@ interface Order {
     created_at: string;
     items: OrderItem[];
     payments: Payment[];
+    status_logs?: OrderStatusLog[];
+    timeline_logs?: OrderStatusLog[];
 }
 
 interface Props {
@@ -65,6 +74,12 @@ export default function CustomerOrderShow({ order }: Props) {
     const [copied, setCopied] = useState(false);
     const [showConfirmModal, setShowConfirmModal] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const logs: OrderStatusLog[] = (order.status_logs && order.status_logs.length > 0)
+        ? order.status_logs
+        : (order.timeline_logs || []);
+
+    const tracker = getCourierTracker(order.shipping_courier, order.tracking_number);
 
     const handleCopyTracking = () => {
         if (!order.tracking_number) return;
@@ -171,6 +186,11 @@ export default function CustomerOrderShow({ order }: Props) {
                         {steps.map((step, idx) => {
                             const isCompleted = idx <= currentStepIndex;
                             const isCurrent = idx === currentStepIndex;
+                            const stepLog = logs.find((l) => l.status === step.key);
+                            const stepDate = stepLog?.created_at 
+                                ? formatDate(stepLog.created_at) 
+                                : (isCompleted ? formatDate(order.created_at) : null);
+
                             return (
                                 <div key={step.key} className="flex sm:flex-col items-center sm:text-center gap-3 sm:gap-2 p-2 sm:p-0 rounded-xl bg-slate-50/70 sm:bg-transparent dark:bg-slate-800/40 sm:dark:bg-transparent">
                                     <div
@@ -185,6 +205,9 @@ export default function CustomerOrderShow({ order }: Props) {
                                     <div className="text-left sm:text-center">
                                         <p className={`text-xs font-bold ${isCurrent ? 'text-emerald-600 dark:text-emerald-400' : isCompleted ? 'text-slate-900 dark:text-white' : 'text-slate-400'}`}>
                                             {step.label}
+                                        </p>
+                                        <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium mt-0.5 sm:mt-1">
+                                            {stepDate || '-'}
                                         </p>
                                     </div>
                                 </div>
@@ -214,14 +237,27 @@ export default function CustomerOrderShow({ order }: Props) {
                         </div>
                     </div>
 
-                    <button
-                        type="button"
-                        onClick={handleCopyTracking}
-                        className="w-full sm:w-auto inline-flex min-h-[44px] items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-white border border-purple-200 text-xs font-bold text-purple-700 hover:bg-purple-50 dark:bg-purple-900 dark:border-purple-800 dark:text-white transition shadow-xs cursor-pointer"
-                    >
-                        {copied ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
-                        <span>{copied ? 'Tersalin' : 'Salin Nomor Resi'}</span>
-                    </button>
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+                        {tracker && (
+                            <a
+                                href={tracker.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex min-h-[44px] items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-xs font-bold text-white transition shadow-xs cursor-pointer"
+                            >
+                                <span>{tracker.label}</span>
+                                <ExternalLink className="h-3.5 w-3.5" />
+                            </a>
+                        )}
+                        <button
+                            type="button"
+                            onClick={handleCopyTracking}
+                            className="inline-flex min-h-[44px] items-center justify-center gap-1.5 px-4 py-2 rounded-xl bg-white border border-purple-200 text-xs font-bold text-purple-700 hover:bg-purple-50 dark:bg-purple-900 dark:border-purple-800 dark:text-white transition shadow-xs cursor-pointer"
+                        >
+                            {copied ? <Check className="h-4 w-4 text-emerald-600" /> : <Copy className="h-4 w-4" />}
+                            <span>{copied ? 'Tersalin' : 'Salin Nomor Resi'}</span>
+                        </button>
+                    </div>
                 </div>
             )}
 

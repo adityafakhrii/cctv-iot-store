@@ -51,6 +51,38 @@ class Order extends Model
         'total' => 'float',
     ];
 
+    protected $appends = [
+        'timeline_logs',
+    ];
+
+    protected static function booted(): void
+    {
+        static::created(function (Order $order) {
+            $order->statusLogs()->create([
+                'status' => $order->order_status ?? self::STATUS_PENDING_PAYMENT,
+                'description' => 'Pesanan berhasil dibuat oleh pelanggan.',
+            ]);
+        });
+
+        static::updating(function (Order $order) {
+            if ($order->isDirty('order_status')) {
+                $newStatus = $order->order_status;
+                $desc = match ($newStatus) {
+                    self::STATUS_PAID => 'Pembayaran pesanan telah berhasil diverifikasi.',
+                    self::STATUS_PROCESSING => 'Pesanan sedang dipersiapkan dan dilakukan Quality Control (QC).',
+                    self::STATUS_SHIPPED => 'Pesanan telah diserahkan ke kurir pengiriman'.($order->shipping_courier ? " ({$order->shipping_courier}".($order->tracking_number ? ", No. Resi: {$order->tracking_number}" : '').')' : '.'),
+                    self::STATUS_COMPLETED => 'Pesanan telah diterima oleh pelanggan dan transaksi selesai.',
+                    default => "Status pesanan diperbarui menjadi {$newStatus}.",
+                };
+
+                $order->statusLogs()->create([
+                    'status' => $newStatus,
+                    'description' => $desc,
+                ]);
+            }
+        });
+    }
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
@@ -69,5 +101,60 @@ class Order extends Model
     public function latestPayment(): HasOne
     {
         return $this->hasOne(Payment::class)->latestOfMany();
+    }
+
+    public function statusLogs(): HasMany
+    {
+        return $this->hasMany(OrderStatusLog::class)->orderBy('created_at', 'asc');
+    }
+
+    public function getTimelineLogsAttribute(): array
+    {
+        $logs = $this->statusLogs;
+
+        if ($logs->isNotEmpty()) {
+            return $logs->toArray();
+        }
+
+        $fallback = [];
+        $fallback[] = [
+            'status' => self::STATUS_PENDING_PAYMENT,
+            'description' => 'Pesanan berhasil dibuat oleh pelanggan.',
+            'created_at' => $this->created_at?->toISOString() ?? now()->toISOString(),
+        ];
+
+        if ($this->latestPayment?->paid_at || in_array($this->order_status, [self::STATUS_PAID, self::STATUS_PROCESSING, self::STATUS_SHIPPED, self::STATUS_COMPLETED])) {
+            $fallback[] = [
+                'status' => self::STATUS_PAID,
+                'description' => 'Pembayaran pesanan telah berhasil diverifikasi.',
+                'created_at' => $this->latestPayment?->paid_at ? \Carbon\Carbon::parse($this->latestPayment->paid_at)->toISOString() : ($this->created_at?->toISOString() ?? now()->toISOString()),
+            ];
+        }
+
+        if (in_array($this->order_status, [self::STATUS_PROCESSING, self::STATUS_SHIPPED, self::STATUS_COMPLETED])) {
+            $fallback[] = [
+                'status' => self::STATUS_PROCESSING,
+                'description' => 'Pesanan sedang dipersiapkan dan dilakukan Quality Control (QC).',
+                'created_at' => $this->updated_at?->toISOString() ?? now()->toISOString(),
+            ];
+        }
+
+        if (in_array($this->order_status, [self::STATUS_SHIPPED, self::STATUS_COMPLETED])) {
+            $fallback[] = [
+                'status' => self::STATUS_SHIPPED,
+                'description' => 'Pesanan telah diserahkan ke kurir pengiriman'.($this->shipping_courier ? " ({$this->shipping_courier}".($this->tracking_number ? ", No. Resi: {$this->tracking_number}" : '').')' : '.'),
+                'created_at' => $this->updated_at?->toISOString() ?? now()->toISOString(),
+            ];
+        }
+
+        if ($this->order_status === self::STATUS_COMPLETED) {
+            $fallback[] = [
+                'status' => self::STATUS_COMPLETED,
+                'description' => 'Pesanan telah diterima oleh pelanggan dan transaksi selesai.',
+                'created_at' => $this->updated_at?->toISOString() ?? now()->toISOString(),
+            ];
+        }
+
+        return $fallback;
     }
 }

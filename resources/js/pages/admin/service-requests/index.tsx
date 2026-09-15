@@ -1,9 +1,9 @@
-import { Head, Link, router } from '@inertiajs/react';
+import { Head, Link, router, useForm } from '@inertiajs/react';
 import { useState } from 'react';
 import { AdminLayout } from '@/layouts/admin-layout';
 import { CustomSelect } from '@/components/ui/custom-select';
 import { formatDate, getWhatsAppLink } from '@/lib/format';
-import { Search, Wrench, Phone, Mail, MapPin, CheckCircle2, Trash2, MessageSquare } from 'lucide-react';
+import { Search, Wrench, Phone, Mail, MapPin, CheckCircle2, Trash2, MessageSquare, Plus, X, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface ServiceRequest {
@@ -36,10 +36,33 @@ interface ServiceRequestIndexProps {
 
 export default function ServiceRequestsIndex({ requests, filters }: ServiceRequestIndexProps) {
     const [search, setSearch] = useState(filters.q || '');
+    const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
+    const { data, setData, post, processing, errors, reset } = useForm({
+        name: '',
+        email: '',
+        phone: '',
+        service_type: 'Instalasi',
+        location: '',
+        description: '',
+        note: '',
+        status: 'Baru',
+    });
 
     const handleSearch = (e: React.FormEvent) => {
         e.preventDefault();
         router.get('/admin/service-requests', { ...filters, q: search }, { preserveState: true, replace: true });
+    };
+
+    const handleCreateSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        post('/admin/service-requests', {
+            onSuccess: () => {
+                setIsCreateModalOpen(false);
+                reset();
+                toast.success('Pengajuan layanan baru berhasil ditambahkan.');
+            },
+        });
     };
 
     const handleFilterChange = (key: string, val: string) => {
@@ -65,13 +88,27 @@ export default function ServiceRequestsIndex({ requests, filters }: ServiceReque
             <Head title="Admin - Service Requests — Dodolan Store" />
 
             <div className="space-y-6">
-                <div>
-                    <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-                        Pengajuan Layanan Instalasi, Survey &amp; Maintenance ({requests.total})
-                    </h2>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                        Tindak lanjuti permintaan teknisi armada dari calon klien atau pelanggan.
-                    </p>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <div>
+                        <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+                            Pengajuan Layanan Instalasi, Survey &amp; Maintenance ({requests.total})
+                        </h2>
+                        <p className="text-xs text-slate-500 mt-0.5">
+                            Tindak lanjuti permintaan teknisi armada dari calon klien atau pelanggan.
+                        </p>
+                    </div>
+
+                    <button
+                        type="button"
+                        onClick={() => {
+                            reset();
+                            setIsCreateModalOpen(true);
+                        }}
+                        className="inline-flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-2.5 text-xs font-bold text-white shadow-sm hover:bg-emerald-500 transition cursor-pointer shrink-0"
+                    >
+                        <Plus className="h-4 w-4" />
+                        <span>Tambah Layanan Baru</span>
+                    </button>
                 </div>
 
                 {/* Filters */}
@@ -306,6 +343,180 @@ export default function ServiceRequestsIndex({ requests, filters }: ServiceReque
                     )}
                 </div>
             </div>
+
+            {/* Create Service Request Modal */}
+            {isCreateModalOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in">
+                    <div className="w-full max-w-xl rounded-2xl border border-slate-200 bg-white p-5 sm:p-6 dark:border-slate-800 dark:bg-slate-900 shadow-2xl space-y-4 max-h-[90dvh] overflow-y-auto animate-in zoom-in-95">
+                        <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                            <div className="flex items-center gap-2">
+                                <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-400">
+                                    <Wrench className="h-4 w-4" />
+                                </div>
+                                <h3 className="font-bold text-sm sm:text-base text-slate-900 dark:text-white">
+                                    Tambah Pengajuan Layanan Baru
+                                </h3>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setIsCreateModalOpen(false)}
+                                className="flex h-9 w-9 items-center justify-center rounded-xl text-slate-400 hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-white transition"
+                            >
+                                <X className="h-5 w-5" />
+                            </button>
+                        </div>
+
+                        <form onSubmit={handleCreateSubmit} className="space-y-4">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                                <div>
+                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                                        Nama Pemohon / Perusahaan <span className="text-rose-500">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        required
+                                        value={data.name}
+                                        onChange={(e) => setData('name', e.target.value)}
+                                        placeholder="Contoh: PT Armada Logistik / Budi"
+                                        className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-900 focus:border-emerald-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                                    />
+                                    {errors.name && <p className="text-[11px] text-rose-500 mt-1">{errors.name}</p>}
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                                        Email Pemohon <span className="text-rose-500">*</span>
+                                    </label>
+                                    <input
+                                        type="email"
+                                        required
+                                        value={data.email}
+                                        onChange={(e) => setData('email', e.target.value)}
+                                        placeholder="budi@example.com"
+                                        className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-900 focus:border-emerald-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                                    />
+                                    {errors.email && <p className="text-[11px] text-rose-500 mt-1">{errors.email}</p>}
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                                <div>
+                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                                        No. WhatsApp / Telepon <span className="text-rose-500">*</span>
+                                    </label>
+                                    <input
+                                        type="tel"
+                                        required
+                                        value={data.phone}
+                                        onChange={(e) => setData('phone', e.target.value)}
+                                        placeholder="081234567890"
+                                        className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-900 focus:border-emerald-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                                    />
+                                    {errors.phone && <p className="text-[11px] text-rose-500 mt-1">{errors.phone}</p>}
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                                        Jenis Layanan <span className="text-rose-500">*</span>
+                                    </label>
+                                    <CustomSelect
+                                        value={data.service_type}
+                                        onChange={(val) => setData('service_type', val)}
+                                        className="w-full"
+                                        options={[
+                                            { value: 'Instalasi', label: 'Instalasi Perangkat IoT' },
+                                            { value: 'Survey', label: 'Survey Lokasi & Armada' },
+                                            { value: 'Maintenance', label: 'Maintenance & Kalibrasi Sensor' },
+                                        ]}
+                                    />
+                                    {errors.service_type && <p className="text-[11px] text-rose-500 mt-1">{errors.service_type}</p>}
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                                <div>
+                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                                        Lokasi Armada / Proyek <span className="text-rose-500">*</span>
+                                    </label>
+                                    <input
+                                        type="text"
+                                        required
+                                        value={data.location}
+                                        onChange={(e) => setData('location', e.target.value)}
+                                        placeholder="Contoh: Pool Truk Waru, Sidoarjo"
+                                        className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-900 focus:border-emerald-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                                    />
+                                    {errors.location && <p className="text-[11px] text-rose-500 mt-1">{errors.location}</p>}
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                                        Status Awal
+                                    </label>
+                                    <CustomSelect
+                                        value={data.status}
+                                        onChange={(val) => setData('status', val)}
+                                        className="w-full"
+                                        options={[
+                                            { value: 'Baru', label: 'Baru' },
+                                            { value: 'Diproses', label: 'Diproses' },
+                                            { value: 'Selesai', label: 'Selesai' },
+                                        ]}
+                                    />
+                                    {errors.status && <p className="text-[11px] text-rose-500 mt-1">{errors.status}</p>}
+                                </div>
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                                    Deskripsi Kebutuhan &amp; Spesifikasi <span className="text-rose-500">*</span>
+                                </label>
+                                <textarea
+                                    required
+                                    rows={3}
+                                    value={data.description}
+                                    onChange={(e) => setData('description', e.target.value)}
+                                    placeholder="Jelaskan kebutuhan teknis armada, jumlah unit, tipe kendaraan, dsb..."
+                                    className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-900 focus:border-emerald-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                                />
+                                {errors.description && <p className="text-[11px] text-rose-500 mt-1">{errors.description}</p>}
+                            </div>
+
+                            <div>
+                                <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1">
+                                    Catatan Tambahan (Opsional)
+                                </label>
+                                <input
+                                    type="text"
+                                    value={data.note}
+                                    onChange={(e) => setData('note', e.target.value)}
+                                    placeholder="Jadwal preferensi teknisi atau kontak PIC lapangan"
+                                    className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-2.5 text-xs text-slate-900 focus:border-emerald-500 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                                />
+                            </div>
+
+                            <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100 dark:border-slate-800">
+                                <button
+                                    type="button"
+                                    disabled={processing}
+                                    onClick={() => setIsCreateModalOpen(false)}
+                                    className="px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-600 hover:bg-slate-100 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800 transition"
+                                >
+                                    Batal
+                                </button>
+                                <button
+                                    type="submit"
+                                    disabled={processing}
+                                    className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-bold text-white transition shadow-sm disabled:opacity-50 cursor-pointer"
+                                >
+                                    {processing && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                                    <span>Simpan Pengajuan Layanan</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            )}
         </AdminLayout>
     );
 }

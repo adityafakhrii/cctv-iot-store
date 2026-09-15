@@ -3,8 +3,16 @@ import { useState } from 'react';
 import { AdminLayout } from '@/layouts/admin-layout';
 import { CustomSelect } from '@/components/ui/custom-select';
 import { formatRupiah, formatDate, getWhatsAppLink } from '@/lib/format';
-import { ChevronLeft, Phone, Mail, MapPin, CreditCard, ShoppingCart, CheckCircle2, Truck, RefreshCw, MessageSquare } from 'lucide-react';
+import { ChevronLeft, Phone, Mail, MapPin, CreditCard, ShoppingCart, CheckCircle2, Truck, RefreshCw, MessageSquare, ExternalLink, Clock } from 'lucide-react';
 import { toast } from 'sonner';
+import { COURIER_PRESETS, getCourierTracker } from '@/lib/courier';
+
+interface OrderStatusLog {
+    id?: number;
+    status: string;
+    description?: string | null;
+    created_at: string;
+}
 
 interface OrderItem {
     id: number;
@@ -40,6 +48,8 @@ interface Order {
     created_at: string;
     items: OrderItem[];
     payments: Payment[];
+    status_logs?: OrderStatusLog[];
+    timeline_logs?: OrderStatusLog[];
 }
 
 interface OrderShowProps {
@@ -47,10 +57,23 @@ interface OrderShowProps {
 }
 
 export default function OrderShow({ order }: OrderShowProps) {
+    const isKnownPreset = order.shipping_courier ? (COURIER_PRESETS as readonly string[]).includes(order.shipping_courier) : false;
+    const initialPreset = order.shipping_courier
+        ? (isKnownPreset ? order.shipping_courier : 'Lainnya')
+        : 'JNE';
+
     const [status, setStatus] = useState(order.order_status);
-    const [shippingCourier, setShippingCourier] = useState(order.shipping_courier || '');
+    const [courierPreset, setCourierPreset] = useState(initialPreset);
+    const [customCourier, setCustomCourier] = useState(isKnownPreset ? '' : (order.shipping_courier || ''));
+    const [shippingCourier, setShippingCourier] = useState(order.shipping_courier || 'JNE');
     const [trackingNumber, setTrackingNumber] = useState(order.tracking_number || '');
     const [updating, setUpdating] = useState(false);
+
+    const logs: OrderStatusLog[] = (order.status_logs && order.status_logs.length > 0)
+        ? order.status_logs
+        : (order.timeline_logs || []);
+
+    const tracker = getCourierTracker(order.shipping_courier, order.tracking_number);
 
     const handleUpdateStatus = (e: React.FormEvent) => {
         e.preventDefault();
@@ -130,7 +153,21 @@ export default function OrderShow({ order }: OrderShowProps) {
                                 {order.tracking_number && (
                                     <div>
                                         <span className="text-slate-400 block text-[11px]">Nomor Resi:</span>
-                                        <span className="font-mono font-bold text-purple-600 dark:text-purple-400">{order.tracking_number}</span>
+                                        <div className="flex items-center gap-2">
+                                            <span className="font-mono font-bold text-purple-600 dark:text-purple-400">{order.tracking_number}</span>
+                                            {tracker && (
+                                                <a
+                                                    href={tracker.url}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="inline-flex items-center gap-1 text-[11px] font-bold text-purple-600 hover:text-purple-700 dark:text-purple-400 underline"
+                                                    title={tracker.label}
+                                                >
+                                                    <span>Lacak</span>
+                                                    <ExternalLink className="h-3 w-3" />
+                                                </a>
+                                            )}
+                                        </div>
                                     </div>
                                 )}
                                 {order.note && (
@@ -179,6 +216,62 @@ export default function OrderShow({ order }: OrderShowProps) {
                                 <span className="font-black text-lg sm:text-xl text-emerald-600 dark:text-emerald-400">{formatRupiah(order.total)}</span>
                             </div>
                         </div>
+
+                        {/* Timeline Kronologi Pesanan */}
+                        <div className="rounded-2xl border border-slate-200 bg-white p-4 sm:p-6 dark:border-slate-800 dark:bg-slate-900 shadow-xs space-y-4">
+                            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+                                <div className="flex items-center gap-2">
+                                    <Clock className="h-4 w-4 text-emerald-600" />
+                                    <h3 className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white uppercase tracking-wider">
+                                        Timeline Kronologi Pesanan
+                                    </h3>
+                                </div>
+                                <span className="text-[11px] text-slate-400 font-mono">
+                                    {logs.length} Riwayat Tercatat
+                                </span>
+                            </div>
+
+                            <div className="relative pl-4 sm:pl-6 border-l-2 border-slate-200 dark:border-slate-700 ml-3 sm:ml-4 space-y-4 py-1">
+                                {logs.map((log, idx) => (
+                                    <div key={idx} className="relative group">
+                                        <div className={`absolute -left-[23px] sm:-left-[31px] top-1 h-3.5 w-3.5 rounded-full ring-4 ring-white dark:ring-slate-900 ${
+                                            log.status === 'Selesai'
+                                                ? 'bg-emerald-600'
+                                                : log.status === 'Dikirim'
+                                                ? 'bg-purple-600'
+                                                : log.status === 'Diproses' || log.status === 'Dibayar'
+                                                ? 'bg-blue-600'
+                                                : 'bg-amber-500'
+                                        }`} />
+
+                                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1">
+                                            <div className="flex items-center gap-2">
+                                                <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-bold ${
+                                                    log.status === 'Selesai'
+                                                        ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300'
+                                                        : log.status === 'Dikirim'
+                                                        ? 'bg-purple-50 text-purple-700 dark:bg-purple-950 dark:text-purple-300'
+                                                        : log.status === 'Diproses' || log.status === 'Dibayar'
+                                                        ? 'bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300'
+                                                        : 'bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300'
+                                                }`}>
+                                                    {log.status}
+                                                </span>
+                                            </div>
+                                            <span className="text-[11px] font-mono font-medium text-slate-500 dark:text-slate-400">
+                                                {formatDate(log.created_at)}
+                                            </span>
+                                        </div>
+
+                                        {log.description && (
+                                            <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 leading-relaxed">
+                                                {log.description}
+                                            </p>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
                     </div>
 
                     {/* Right Col: Status Management & Payment Log */}
@@ -214,13 +307,35 @@ export default function OrderShow({ order }: OrderShowProps) {
                                             <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5">
                                                 Nama Ekspedisi / Kurir
                                             </label>
-                                            <input
-                                                type="text"
-                                                value={shippingCourier}
-                                                onChange={(e) => setShippingCourier(e.target.value)}
-                                                placeholder="Contoh: JNE / J&T / Armada Dodolan"
-                                                className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs text-slate-900 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                                            <CustomSelect
+                                                value={courierPreset}
+                                                onChange={(val) => {
+                                                    setCourierPreset(val);
+                                                    if (val === 'Lainnya') {
+                                                        setShippingCourier(customCourier);
+                                                    } else {
+                                                        setShippingCourier(val);
+                                                    }
+                                                }}
+                                                className="w-full"
+                                                options={[
+                                                    ...COURIER_PRESETS.map((c) => ({ value: c, label: c })),
+                                                    { value: 'Lainnya', label: 'Lainnya (Input Manual...)' },
+                                                ]}
                                             />
+                                            {courierPreset === 'Lainnya' && (
+                                                <input
+                                                    type="text"
+                                                    value={customCourier}
+                                                    onChange={(e) => {
+                                                        setCustomCourier(e.target.value);
+                                                        setShippingCourier(e.target.value);
+                                                    }}
+                                                    placeholder="Ketik nama ekspedisi / kurir manual..."
+                                                    className="mt-2 w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-xs text-slate-900 focus:outline-hidden dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                                                    required
+                                                />
+                                            )}
                                         </div>
 
                                         <div>
