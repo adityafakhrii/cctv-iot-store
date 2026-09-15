@@ -235,7 +235,7 @@ export default function CustomerOrderShow({ order }: Props) {
                     </div>
 
                     <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-                        {tracker && (
+                        {order.order_status !== 'Selesai' && tracker && (
                             <a
                                 href={tracker.url}
                                 target="_blank"

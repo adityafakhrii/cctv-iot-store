@@ -224,7 +224,7 @@ export default function CustomerOrdersIndex({ orders, filters }: Props) {
                                             Kurir: <strong className="font-bold">{order.shipping_courier || 'Ekspedisi'}</strong> — No. Resi: <strong className="font-mono font-bold tracking-wider">{order.tracking_number}</strong>
                                         </span>
                                     </div>
-                                    {getCourierTracker(order.shipping_courier, order.tracking_number) && (
+                                    {order.order_status !== 'Selesai' && getCourierTracker(order.shipping_courier, order.tracking_number) && (
                                         <a
                                             href={getCourierTracker(order.shipping_courier, order.tracking_number)!.url}
                                             target="_blank"
@@ -288,7 +288,7 @@ export default function CustomerOrdersIndex({ orders, filters }: Props) {
                                             order.order_status === 'Menunggu Pembayaran' || order.order_status === 'Dikirim' ? '' : 'col-span-2 sm:col-span-1'
                                         }`}
                                     >
-                                        <span>Rincian &amp; Lacak</span>
+                                        <span>{order.order_status === 'Dikirim' ? 'Rincian & Lacak' : 'Lihat Pesanan'}</span>
                                         <ChevronRight className="h-3.5 w-3.5" />
                                     </Link>
                                 </div>
