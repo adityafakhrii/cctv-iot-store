@@ -1,6 +1,7 @@
 import { Link } from '@inertiajs/react';
 import { CustomerLayout } from '@/layouts/customer-layout';
 import { formatRupiah, formatDate, getWhatsAppLink } from '@/lib/format';
+import { useStoreSettings } from '@/hooks/use-store-settings';
 import { 
     Clock, 
     PackageCheck, 
@@ -53,6 +54,7 @@ interface Props {
 }
 
 export default function CustomerDashboard({ stats, recentOrders, recentServices, user }: Props) {
+    const store = useStoreSettings();
     const getStatusBadge = (status: string) => {
         switch (status) {
             case 'Menunggu Pembayaran':
@@ -269,7 +271,7 @@ export default function CustomerDashboard({ stats, recentOrders, recentServices,
                     </div>
                     <div className="pt-1">
                         <a
-                            href={getWhatsAppLink('6281234567890', `Halo Dodolan, saya customer (${user.name}) ingin berkonsultasi mengenai pesanan & layanan saya.`)}
+                            href={getWhatsAppLink(store.store_whatsapp, `Halo ${store.store_name}, saya customer (${user.name}) ingin berkonsultasi mengenai pesanan & layanan saya.`)}
                             target="_blank"
                             rel="noreferrer"
                             className="inline-flex min-h-[40px] items-center text-xs font-bold text-emerald-600 hover:underline gap-1"

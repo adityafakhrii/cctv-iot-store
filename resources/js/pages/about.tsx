@@ -1,12 +1,15 @@
 import { Head, Link } from '@inertiajs/react';
 import { PublicLayout } from '@/layouts/public-layout';
 import { ShieldCheck, Cpu, Target, Award, CheckCircle2, ChevronRight, PhoneCall } from 'lucide-react';
+import { useStoreSettings } from '@/hooks/use-store-settings';
 import { getWhatsAppLink } from '@/lib/format';
 
 export default function About() {
+    const store = useStoreSettings();
+
     return (
         <PublicLayout>
-            <Head title="Tentang Kami — Dodolan Store" />
+            <Head title={`Tentang Kami — ${store.store_name}`} />
 
             {/* Header Hero */}
             <div className="bg-slate-900 text-white py-16 lg:py-20 border-b border-slate-800">
@@ -19,7 +22,7 @@ export default function About() {
                             Membangun Masa Depan Terhubung Melalui Inovasi IoT &amp; Telemetri
                         </h1>
                         <p className="text-base text-slate-300 sm:text-lg leading-relaxed">
-                            Dodolan adalah perusahaan teknologi yang berfokus pada integrasi perangkat keras IoT, pelacakan armada kendaraan, pemantauan keselamatan AI, dan solusi telemetri industri terdepan.
+                            {store.store_name} ({store.company_name}) adalah perusahaan teknologi yang berfokus pada integrasi perangkat keras IoT, pelacakan armada kendaraan, pemantauan keselamatan AI, dan solusi telemetri industri terdepan.
                         </p>
                     </div>
                 </div>
@@ -106,7 +109,7 @@ export default function About() {
                             <ChevronRight className="h-4 w-4" />
                         </Link>
                         <a
-                            href={getWhatsAppLink('6281234567890', 'Halo Dodolan, saya ingin info lebih lanjut tentang perusahaan Anda.')}
+                            href={getWhatsAppLink(store.store_whatsapp, `Halo ${store.store_name}, saya ingin info lebih lanjut tentang perusahaan Anda.`)}
                             target="_blank"
                             rel="noreferrer"
                             className="inline-flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"

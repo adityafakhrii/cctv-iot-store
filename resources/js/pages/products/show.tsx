@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { formatRupiah, getWhatsAppLink } from '@/lib/format';
 import { useCart } from '@/hooks/use-cart';
+import { useStoreSettings } from '@/hooks/use-store-settings';
 import { toast } from 'sonner';
 
 interface ProductDetailProps {
@@ -44,6 +45,7 @@ interface ProductDetailProps {
 }
 
 export default function ProductShow({ product, specification, relatedProducts }: ProductDetailProps) {
+    const store = useStoreSettings();
     const { addItem } = useCart();
     const [quantity, setQuantity] = useState(1);
     const [selectedImage, setSelectedImage] = useState(product.image_url);
@@ -71,11 +73,11 @@ export default function ProductShow({ product, specification, relatedProducts }:
         router.visit('/checkout');
     };
 
-    const waMessage = `Halo Dodolan Store, saya tertarik dengan produk ${product.name} (Harga: ${formatRupiah(product.price)}). Apakah unit ini ready stock?`;
+    const waMessage = `Halo ${store.store_name}, saya tertarik dengan produk ${product.name} (Harga: ${formatRupiah(product.price)}). Apakah unit ini ready stock?`;
 
     return (
         <PublicLayout>
-            <Head title={`${product.name} — Dodolan Store`} />
+            <Head title={`${product.name} — ${store.store_name}`} />
 
             {/* Breadcrumb Navigation */}
             <div className="border-b border-slate-200 bg-slate-50 py-3 text-xs text-slate-500 dark:border-slate-800 dark:bg-slate-900/50">
@@ -249,7 +251,7 @@ export default function ProductShow({ product, specification, relatedProducts }:
                             {/* Direct WhatsApp Action */}
                             <div className="pt-2">
                                 <a
-                                    href={getWhatsAppLink('6281234567890', waMessage)}
+                                    href={getWhatsAppLink(store.store_whatsapp, waMessage)}
                                     target="_blank"
                                     rel="noreferrer"
                                     className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3 text-xs font-semibold text-slate-700 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 transition"

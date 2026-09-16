@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-    <title>Invoice #{{ $order->order_number }} - Dodolan Store</title>
+    <title>Invoice #{{ $order->order_number }} - {{ $storeSettings['store_name'] ?? 'Dodolan Store' }}</title>
     <style>
         /* DOMPDF-safe: no @page margin, use body padding instead */
         @page {
@@ -373,13 +373,14 @@
     <table class="foot">
         <tr>
             <td style="width: 55%;">
-                <span class="co">PT Dodolan Teknologi Nusantara</span><br/>
-                Jl. Rungkut Industri Raya No. 45, Surabaya 60293<br/>
-                WA: +62 812-3456-7890 &bull; halo@dodolan.store
+                <span class="co">{{ $storeSettings['company_name'] ?? 'PT Dodolan Teknologi Nusantara' }}</span><br/>
+                {{ $storeSettings['store_address'] ?? 'Komp. Fantasy Junction Blok FJ4 No. 15' }}<br/>
+                {{ $storeSettings['store_city'] ?? 'Balikpapan, Kalimantan Timur, Indonesia' }} {{ $storeSettings['store_postal_code'] ?? '76114' }}<br/>
+                WA: {{ $storeSettings['store_whatsapp'] ?? '081150003775' }} &bull; {{ $storeSettings['store_email'] ?? 'halo@dodolan.store' }}
             </td>
             <td style="width: 45%; text-align: right;">
-                <div style="font-size: 7.5pt; color: #aaaaaa;">Surabaya, {{ \Carbon\Carbon::parse($order->created_at)->translatedFormat('d F Y') }}</div>
-                <div class="sign-co">Dodolan Store</div>
+                <div style="font-size: 7.5pt; color: #aaaaaa;">{{ !empty($storeSettings['store_city']) ? explode(',', $storeSettings['store_city'])[0] : 'Balikpapan' }}, {{ \Carbon\Carbon::parse($order->created_at)->translatedFormat('d F Y') }}</div>
+                <div class="sign-co">{{ $storeSettings['store_name'] ?? 'Dodolan Store' }}</div>
                 <span class="sign-badge">AUTHORIZED</span>
             </td>
         </tr>

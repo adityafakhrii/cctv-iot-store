@@ -1,4 +1,5 @@
 import type { Auth } from '@/types/auth';
+import type { StoreSettings } from '@/types/store';
 
 declare module 'react' {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -13,7 +14,9 @@ declare module '@inertiajs/core' {
             name: string;
             auth: Auth;
             sidebarOpen: boolean;
+            store: StoreSettings;
             [key: string]: unknown;
         };
     }
 }
+

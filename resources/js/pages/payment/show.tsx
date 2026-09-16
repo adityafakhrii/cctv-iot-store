@@ -1,6 +1,7 @@
 import { Head, Link, router } from '@inertiajs/react';
 import { PublicLayout } from '@/layouts/public-layout';
 import { formatRupiah, formatDate, getWhatsAppLink } from '@/lib/format';
+import { useStoreSettings } from '@/hooks/use-store-settings';
 import { 
     CheckCircle2, 
     Clock, 
@@ -57,6 +58,7 @@ interface PaymentShowProps {
 }
 
 export default function PaymentShow({ order }: PaymentShowProps) {
+    const store = useStoreSettings();
     const isPaid = order.payment_status === 'Paid' || order.order_status === 'Dibayar';
 
     // Auto-polling: Automatically refresh the order status every 4 seconds when unpaid
@@ -81,11 +83,11 @@ export default function PaymentShow({ order }: PaymentShowProps) {
     const mayarInvoiceLink = order.latest_payment?.raw_response?.data?.link 
         || order.latest_payment?.raw_response?.link;
 
-    const waConfirmationMessage = `Halo CS Dodolan Store, saya ingin mengonfirmasi pesanan #${order.order_number} atas nama ${order.customer_name} (Total: ${formatRupiah(order.total)}). Status pembayaran: ${order.payment_status}.`;
+    const waConfirmationMessage = `Halo CS ${store.store_name}, saya ingin mengonfirmasi pesanan #${order.order_number} atas nama ${order.customer_name} (Total: ${formatRupiah(order.total)}). Status pembayaran: ${order.payment_status}.`;
 
     return (
         <PublicLayout>
-            <Head title={`Status Pembayaran #${order.order_number} — Dodolan Store`} />
+            <Head title={`Status Pembayaran #${order.order_number} — ${store.store_name}`} />
 
             {/* Header Banner */}
             <div className="bg-slate-900 text-white py-12 border-b border-slate-800">
@@ -291,7 +293,7 @@ export default function PaymentShow({ order }: PaymentShowProps) {
 
                     <div className="flex items-center gap-2.5 w-full sm:w-auto flex-wrap justify-end">
                         <a
-                            href={getWhatsAppLink('6281234567890', waConfirmationMessage)}
+                            href={getWhatsAppLink(store.store_whatsapp, waConfirmationMessage)}
                             target="_blank"
                             rel="noreferrer"
                             className="w-full sm:w-auto inline-flex items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50/70 px-4 py-3 text-xs font-bold text-emerald-800 hover:bg-emerald-100 transition"

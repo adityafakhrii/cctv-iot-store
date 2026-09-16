@@ -129,6 +129,8 @@ Route::middleware(['auth', EnsureUserIsAdmin::class])->prefix('admin')->name('ad
     Route::get('/settings', [AdminSettingsController::class, 'index'])->name('settings.index');
     Route::patch('/settings/profile', [AdminSettingsController::class, 'updateProfile'])->name('settings.profile');
     Route::put('/settings/password', [AdminSettingsController::class, 'updatePassword'])->name('settings.password');
+    Route::patch('/settings/store', [AdminSettingsController::class, 'updateStore'])->name('settings.store');
+    Route::match(['get', 'post'], '/settings/resolve-map', [AdminSettingsController::class, 'resolveMap'])->name('settings.resolve-map');
 });
 
 // Smart Dashboard Redirect

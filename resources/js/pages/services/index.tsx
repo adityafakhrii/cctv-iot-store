@@ -15,6 +15,7 @@ import {
     Loader2 
 } from 'lucide-react';
 import { getWhatsAppLink } from '@/lib/format';
+import { useStoreSettings } from '@/hooks/use-store-settings';
 import { toast } from 'sonner';
 
 interface ServicesIndexProps {
@@ -22,6 +23,7 @@ interface ServicesIndexProps {
 }
 
 export default function ServicesIndex({ selectedType = 'Instalasi' }: ServicesIndexProps) {
+    const store = useStoreSettings();
     const { flash } = usePage<any>().props;
 
     const { data, setData, post, processing, errors, reset, recentlySuccessful } = useForm({
@@ -325,7 +327,7 @@ export default function ServicesIndex({ selectedType = 'Instalasi' }: ServicesIn
                         <div className="border-t border-slate-100 dark:border-slate-800 pt-6 text-center">
                             <p className="text-xs text-slate-500 mb-3">Butuh respon segera untuk jadwal mendesak?</p>
                             <a
-                                href={getWhatsAppLink('6281234567890', 'Halo CS Dodolan, saya butuh bantuan teknisi darurat untuk instalasi/maintenance armada.')}
+                                href={getWhatsAppLink(store.store_whatsapp, `Halo CS ${store.store_name}, saya butuh bantuan teknisi darurat untuk instalasi/maintenance armada.`)}
                                 target="_blank"
                                 rel="noreferrer"
                                 className="inline-flex items-center gap-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 dark:text-emerald-400"

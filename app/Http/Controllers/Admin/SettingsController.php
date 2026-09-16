@@ -7,6 +7,7 @@ use App\Http\Requests\Settings\PasswordUpdateRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use App\Models\StoreSetting;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Inertia\Inertia;
@@ -29,6 +30,7 @@ class SettingsController extends Controller
                 'phone' => $user->phone,
             ],
             'passwordRules' => Password::defaults()->toPasswordRulesString(),
+            'storeSettings' => StoreSetting::getAll(),
         ]);
     }
 
@@ -61,4 +63,53 @@ class SettingsController extends Controller
 
         return back()->with('success', 'Kata sandi Administrator berhasil diperbarui.');
     }
+
+    /**
+     * Update store settings.
+     */
+    public function updateStore(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'store_name' => ['required', 'string', 'max:100'],
+            'company_name' => ['required', 'string', 'max:150'],
+            'store_phone' => ['nullable', 'string', 'max:40'],
+            'store_whatsapp' => ['required', 'string', 'max:40'],
+            'store_email' => ['required', 'email', 'max:100'],
+            'store_address' => ['required', 'string', 'max:255'],
+            'store_city' => ['required', 'string', 'max:100'],
+            'store_postal_code' => ['nullable', 'string', 'max:20'],
+            'operating_hours' => ['required', 'string', 'max:100'],
+            'announcement_bar' => ['nullable', 'string', 'max:255'],
+            'announcement_link' => ['nullable', 'string', 'max:255'],
+            'announcement_active' => ['nullable'],
+            'store_gmaps_embed' => ['nullable', 'string'],
+        ]);
+
+        $validated['announcement_active'] = $request->boolean('announcement_active') ? '1' : '0';
+
+        if (! empty($validated['store_gmaps_embed'])) {
+            // If user pastes full <iframe src="..."> code, extract the clean src URL
+            if (preg_match('/src=["\']([^"\']+)["\']/', $validated['store_gmaps_embed'], $matches)) {
+                $validated['store_gmaps_embed'] = $matches[1];
+            }
+        }
+
+        StoreSetting::setMany($validated);
+
+        return back()->with('success', 'Pengaturan informasi toko berhasil diperbarui.');
+    }
+
+    /**
+     * Resolve any Google Maps link (including shortlinks like maps.app.goo.gl) to an embed URL.
+     */
+    public function resolveMap(Request $request): \Illuminate\Http\JsonResponse
+    {
+        $url = (string) $request->input('url', '');
+        $embedUrl = StoreSetting::convertToEmbedUrl($url);
+
+        return response()->json([
+            'embed_url' => $embedUrl,
+        ]);
+    }
 }
+

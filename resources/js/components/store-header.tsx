@@ -16,6 +16,7 @@ import {
     Shield
 } from 'lucide-react';
 import { useCart } from '@/hooks/use-cart';
+import { useStoreSettings } from '@/hooks/use-store-settings';
 import { getWhatsAppLink } from '@/lib/format';
 import {
     DropdownMenu,
@@ -42,6 +43,7 @@ interface PageProps {
 export function StoreHeader() {
     const { url, props } = usePage<PageProps>();
     const authUser = props.auth?.user;
+    const store = useStoreSettings();
     const { itemCount } = useCart();
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
@@ -85,28 +87,32 @@ export function StoreHeader() {
     return (
         <header className="sticky top-0 z-50 w-full border-b border-slate-200 bg-white/95 backdrop-blur-md dark:border-slate-800 dark:bg-slate-950/95">
             {/* Top Announcement Bar */}
-            <div className="bg-slate-950 border-b border-slate-800 text-xs text-slate-300">
-                <div className="mx-auto flex max-w-[1440px] items-center justify-between px-4 sm:px-6 lg:px-8 py-2">
-                    <div className="flex items-center gap-2 text-[11px] sm:text-xs">
-                        <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400 shrink-0" />
-                        <span className="truncate max-w-[280px] sm:max-w-none">Promo Spesial: Diskon Hardware IoT &amp; Gratis Biaya Survey Armada di Jawa Timur</span>
-                        <Link href="/produk" className="hidden sm:inline-block font-bold text-white underline hover:text-emerald-400 ml-1">
-                            Belanja Sekarang
-                        </Link>
-                    </div>
-                    <div className="hidden items-center gap-4 md:flex">
-                        <a
-                            href={getWhatsAppLink('6281234567890', 'Halo Dodolan, saya ingin info produk.')}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="flex items-center gap-1.5 hover:text-emerald-400 transition"
-                        >
-                            <PhoneCall className="h-3 w-3 text-emerald-400" />
-                            <span>CS WhatsApp: +62 812-3456-7890</span>
-                        </a>
+            {store.announcement_active !== '0' && store.announcement_active !== false && store.announcement_bar && (
+                <div className="bg-slate-950 border-b border-slate-800 text-xs text-slate-300">
+                    <div className="mx-auto flex max-w-[1440px] items-center justify-between px-4 sm:px-6 lg:px-8 py-2">
+                        <div className="flex items-center gap-2 text-[11px] sm:text-xs">
+                            <span className="inline-block h-1.5 w-1.5 rounded-full bg-emerald-400 shrink-0" />
+                            <span className="truncate max-w-[280px] sm:max-w-none">{store.announcement_bar}</span>
+                            {store.announcement_link && (
+                                <Link href={store.announcement_link} className="hidden sm:inline-block font-bold text-white underline hover:text-emerald-400 ml-1">
+                                    Lihat Promo
+                                </Link>
+                            )}
+                        </div>
+                        <div className="hidden items-center gap-4 md:flex">
+                            <a
+                                href={getWhatsAppLink(store.store_whatsapp, 'Halo Dodolan Store, saya ingin info produk.')}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="flex items-center gap-1.5 hover:text-emerald-400 transition"
+                            >
+                                <PhoneCall className="h-3 w-3 text-emerald-400" />
+                                <span>CS WhatsApp: {store.store_phone || store.store_whatsapp}</span>
+                            </a>
+                        </div>
                     </div>
                 </div>
-            </div>
+            )}
 
             {/* Main Navbar */}
             <div className="mx-auto flex h-16 sm:h-20 max-w-[1440px] items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
@@ -262,7 +268,7 @@ export function StoreHeader() {
 
                     {/* Consultation Fast CTA */}
                     <a
-                        href={getWhatsAppLink('6281234567890', 'Halo Dodolan Store, saya ingin berkonsultasi mengenai solusi IoT untuk bisnis saya.')}
+                        href={getWhatsAppLink(store.store_whatsapp, 'Halo Dodolan Store, saya ingin berkonsultasi mengenai solusi IoT untuk bisnis saya.')}
                         target="_blank"
                         rel="noreferrer"
                         className="hidden md:inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3.5 py-2 text-xs font-bold text-white shadow-xs hover:bg-emerald-500 transition active:scale-95 min-h-[40px]"

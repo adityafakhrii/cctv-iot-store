@@ -44,7 +44,7 @@ export function formatFileSize(bytes: number): string {
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
 }
 
-export function getWhatsAppLink(phone: string = '6281234567890', message: string = 'Halo Dodolan, saya tertarik dengan produk IoT Anda.'): string {
+export function getWhatsAppLink(phone: string = '081150003775', message: string = 'Halo Dodolan, saya tertarik dengan produk IoT Anda.'): string {
     const cleanPhone = phone.replace(/[^0-9]/g, '');
     const formattedPhone = cleanPhone.startsWith('0') ? '62' + cleanPhone.slice(1) : cleanPhone;
     return `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;

@@ -1,6 +1,7 @@
 import { Head, Link } from '@inertiajs/react';
 import { PublicLayout } from '@/layouts/public-layout';
 import { Briefcase, Building2, Calendar, CheckCircle2, ChevronRight, PhoneCall } from 'lucide-react';
+import { useStoreSettings } from '@/hooks/use-store-settings';
 import { getWhatsAppLink } from '@/lib/format';
 
 interface Project {
@@ -19,9 +20,11 @@ interface PortfolioProps {
 }
 
 export default function Portfolio({ projects }: PortfolioProps) {
+    const store = useStoreSettings();
+
     return (
         <PublicLayout>
-            <Head title="Portfolio & Implementasi Proyek — Dodolan Store" />
+            <Head title={`Portfolio & Implementasi Proyek — ${store.store_name}`} />
 
             {/* Hero Header */}
             <div className="bg-slate-900 text-white py-16 border-b border-slate-800">
@@ -101,7 +104,7 @@ export default function Portfolio({ projects }: PortfolioProps) {
                             <ChevronRight className="h-4 w-4" />
                         </Link>
                         <a
-                            href={getWhatsAppLink('6281234567890', 'Halo Dodolan, saya ingin mendiskusikan implementasi proyek IoT.')}
+                            href={getWhatsAppLink(store.store_whatsapp, `Halo ${store.store_name}, saya ingin mendiskusikan implementasi proyek IoT.`)}
                             target="_blank"
                             rel="noreferrer"
                             className="inline-flex items-center gap-2 rounded-lg border border-slate-700 bg-slate-800 px-5 py-2.5 text-xs font-semibold text-slate-200 hover:bg-slate-700"

@@ -133,6 +133,7 @@ class OrderController extends Controller
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('invoices.order-invoice', [
             'order' => $order,
             'logoBase64' => $logoBase64,
+            'storeSettings' => \App\Models\StoreSetting::getAll(),
         ])->setPaper('a4', 'portrait');
 
         $filename = "Invoice-{$order->order_number}.pdf";
